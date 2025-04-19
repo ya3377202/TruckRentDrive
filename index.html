@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruckRentDrive - Your Trusted Truck Rental Service</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .fade-in {
+      animation: fadeIn 2s ease-in;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .zoom:hover {
+      transform: scale(1.05);
+      transition: transform 0.3s;
+    }
+    .bg-hero {
+      background-image: url('images/road_transport.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+    .bg-overlay {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      transition: transform 0.3s;
+    }
+    .logo {
+      width: 280px;
+      height: 50px;
+      transition: transform 0.3s ease;
+    }
+    .logo:hover {
+      transform: scale(1.05);
+    }
+    .logo-small {
+      width: 50px;
+      height: 50px;
+      transition: transform 0.3s ease;
+    }
+    .logo-small:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow-md p-4 fixed w-full z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <a href="index.html" class="flex items-center space-x-3">
+        <img src="images/logo/logifleet-logo.svg" alt="TruckRentDrive Logo" class="logo-small">
+        <span class="text-2xl font-bold text-blue-600">TruckRentDrive</span>
+      </a>
+      <nav class="space-x-6">
+        <a href="index.html" class="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
+        <a href="rent-a-truck.html#registration" class="text-gray-600 hover:text-blue-600 transition-colors">Register</a>
+        <a href="rent-a-truck.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Rent a Truck</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="pt-20 text-center bg-hero bg-overlay text-white fade-in min-h-screen flex items-center">
+    <div class="max-w-4xl mx-auto px-4">
+      <img src="images/logo/logifleet-logo-white.svg" alt="TruckRentDrive Logo" class="logo mx-auto mb-8 hover:opacity-90 transition-opacity">
+      <h2 class="text-5xl font-bold mb-4">Welcome to TruckRentDrive</h2>
+      <p class="text-xl mb-8">Your trusted partner in commercial truck rentals</p>
+      <div class="space-x-4">
+        <a href="rent-a-truck.html" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+          <i class="fas fa-truck mr-2"></i> Rent a Truck Now
+        </a>
+        <a href="#features" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg hover:bg-gray-100 transition-colors inline-flex items-center">
+          <i class="fas fa-info-circle mr-2"></i> Learn More
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12">Why Choose TruckRentDrive?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="feature-card text-center p-6 rounded-lg shadow-lg bg-gray-50">
+          <i class="fas fa-truck-moving text-4xl text-blue-600 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-4">Reliable Fleet</h3>
+          <p>Access to well-maintained trucks ready for your transportation needs</p>
+        </div>
+        <div class="feature-card text-center p-6 rounded-lg shadow-lg bg-gray-50">
+          <i class="fas fa-headset text-4xl text-blue-600 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-4">24/7 Support</h3>
+          <p>Round-the-clock customer service to assist you anytime</p>
+        </div>
+        <div class="feature-card text-center p-6 rounded-lg shadow-lg bg-gray-50">
+          <i class="fas fa-map-marked-alt text-4xl text-blue-600 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-4">Nationwide Coverage</h3>
+          <p>Extensive network of locations across the country</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12">Our Services</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <img src="images/truck-rental.jpg" alt="Commercial Truck" class="w-full h-48 object-cover rounded-lg mb-4">
+          <h3 class="text-xl font-semibold mb-2">Commercial Truck Rental</h3>
+          <p class="text-gray-600 mb-4">Short and long-term rental options for businesses of all sizes.</p>
+          <a href="rent-a-truck.html" class="text-blue-600 hover:text-blue-700 inline-flex items-center">
+            Learn More <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <img src="images/truck-fleet.jpg" alt="Fleet Management" class="w-full h-48 object-cover rounded-lg mb-4">
+          <h3 class="text-xl font-semibold mb-2">Fleet Management</h3>
+          <p class="text-gray-600 mb-4">Comprehensive fleet management solutions for your business.</p>
+          <a href="rent-a-truck.html" class="text-blue-600 hover:text-blue-700 inline-flex items-center">
+            Learn More <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12">Real-Time Fleet Tracking</h2>
+      <div class="text-center mb-8">
+        <p class="text-lg text-gray-600">Track your rented trucks in real-time with our advanced GPS tracking system.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="p-6 rounded-lg shadow-lg bg-gray-50">
+          <i class="fas fa-satellite text-4xl text-blue-600 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">GPS Tracking</h3>
+          <p class="text-gray-600">Monitor your fleet's location in real-time with precision GPS tracking.</p>
+        </div>
+        <div class="p-6 rounded-lg shadow-lg bg-gray-50">
+          <i class="fas fa-route text-4xl text-blue-600 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Route Optimization</h3>
+          <p class="text-gray-600">Get the most efficient routes for your deliveries and transportation needs.</p>
+        </div>
+        <div class="p-6 rounded-lg shadow-lg bg-gray-50">
+          <i class="fas fa-clock text-4xl text-blue-600 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">ETA Updates</h3>
+          <p class="text-gray-600">Receive accurate estimated time of arrival updates for all your shipments.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-white text-center p-8 border-t">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div>
+          <h4 class="font-semibold mb-4">Contact Us</h4>
+          <p class="text-gray-600">Email: info@truckrentdrive.com</p>
+          <p class="text-gray-600">Phone: (555) 123-4567</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Quick Links</h4>
+          <div class="space-y-2">
+            <a href="index.html" class="block text-gray-600 hover:text-blue-600">Home</a>
+            <a href="rent-a-truck.html" class="block text-gray-600 hover:text-blue-600">Rent a Truck</a>
+            <a href="#features" class="block text-gray-600 hover:text-blue-600">Features</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Follow Us</h4>
+          <div class="space-x-4">
+            <a href="#" class="text-gray-600 hover:text-blue-600"><i class="fab fa-facebook"></i></a>
+            <a href="#" class="text-gray-600 hover:text-blue-600"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="text-gray-600 hover:text-blue-600"><i class="fab fa-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+      <p class="text-gray-600">&copy; 2024 TruckRentDrive. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html> 
