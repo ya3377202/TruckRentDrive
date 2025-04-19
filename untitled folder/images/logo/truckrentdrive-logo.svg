@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="280" height="50" viewBox="0 0 280 50" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circle background -->
+  <circle cx="25" cy="25" r="20" fill="#2563eb"/>
+  
+  <!-- Stylized truck icon -->
+  <path d="M15 25h20M15 20h20M12 30h26M35 25v-5h3l4 5v5h-3M10 25v5h3" 
+        stroke="#ffffff" 
+        stroke-width="2.5" 
+        fill="none" 
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  
+  <!-- Wheels -->
+  <circle cx="15" cy="32" r="2.5" fill="#ffffff"/>
+  <circle cx="35" cy="32" r="2.5" fill="#ffffff"/>
+  
+  <!-- TruckRentDrive text -->
+  <text x="60" y="32" 
+        font-family="Arial, sans-serif" 
+        font-weight="bold" 
+        font-size="22" 
+        fill="#2563eb">
+    <tspan fill="#2563eb">Truck</tspan><tspan fill="#1d4ed8">Rent</tspan><tspan fill="#2563eb">Drive</tspan>
+  </text>
+</svg> 

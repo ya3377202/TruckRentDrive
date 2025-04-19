@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rent a Truck - TruckRentDrive</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="js/tracking.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    .fade-in {
+      animation: fadeIn 2s ease-in;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .zoom:hover {
+      transform: scale(1.05);
+      transition: transform 0.3s;
+    }
+    .bg-hero {
+      background-image: url('images/road_transport.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+    .bg-overlay {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    .payment-method {
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    .payment-method.selected {
+      border-color: #2563eb;
+      background-color: #eff6ff;
+    }
+    .truck-popup {
+      min-width: 200px;
+    }
+    .truck-details {
+      margin-top: 8px;
+    }
+    .tracking-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .logo {
+      width: 280px;
+      height: 50px;
+      transition: transform 0.3s ease;
+    }
+    .logo:hover {
+      transform: scale(1.05);
+    }
+    .logo-small {
+      width: 50px;
+      height: 50px;
+      transition: transform 0.3s ease;
+    }
+    .logo-small:hover {
+      transform: scale(1.1);
+    }
+    @media (max-width: 640px) {
+      .logo {
+        width: 200px;
+        height: 36px;
+      }
+      .logo-small {
+        width: 40px;
+        height: 40px;
+      }
+    }
+    .mobile-menu {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .desktop-menu {
+        display: none;
+      }
+      .mobile-menu {
+        display: block;
+      }
+      .mobile-nav {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 70%;
+        height: 100vh;
+        background: white;
+        transition: 0.3s;
+        padding: 2rem;
+        z-index: 100;
+      }
+      .mobile-nav.active {
+        display: block;
+        right: 0;
+      }
+      .tracking-controls {
+        position: static;
+        margin: 1rem auto;
+        width: 100%;
+        max-width: 300px;
+      }
+    }
+    /* Desktop Specific Styles */
+    @media (min-width: 1024px) {
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .truck-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+      }
+    }
+
+    /* Tablet Specific Styles */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .container {
+        max-width: 768px;
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
+      .truck-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+      }
+    }
+
+    /* Mobile Specific Styles */
+    @media (max-width: 767px) {
+      .container {
+        padding: 0 1rem;
+      }
+      .truck-card {
+        margin-bottom: 1.5rem;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      .payment-methods {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Shared Responsive Styles */
+    .responsive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .responsive-padding {
+      padding: clamp(1rem, 5vw, 3rem);
+    }
+
+    /* Mobile Menu Styles */
+    .mobile-nav {
+      display: none;
+    }
+
+    /* Desktop Menu Styles */
+    .desktop-menu {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+  <script>
+    const stripe = Stripe('your_publishable_key');
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      
+      try {
+        document.getElementById("submitButton").disabled = true;
+        document.getElementById("submitButton").innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+
+        const response = await fetch("https://formspree.io/f/mdkeqgwk", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+          showNotification('Registration successful! Proceeding to payment...', 'success');
+
+            const startDate = new Date(data.pickup_date);
+            const endDate = new Date(data.return_date);
+            const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+            const baseRate = getTruckRate(data['truck-type']);
+            const total = baseRate * days;
+
+            const paymentResponse = await fetch('/create-payment-intent', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                amount: total,
+                truckType: data['truck-type'],
+                duration: days
+              })
+            });
+
+            if (paymentResponse.ok) {
+              const { clientSecret } = await paymentResponse.json();
+              
+              const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+              if (paymentMethod === 'card') {
+                const result = await stripe.confirmCardPayment(clientSecret, {
+                  payment_method: {
+                    card: elements.getElement('card'),
+                    billing_details: {
+                      name: data.name,
+                      email: data.email
+                    }
+                  }
+                });
+
+                if (result.error) {
+                  showNotification(result.error.message, 'error');
+                } else {
+                  showNotification('Payment successful! Your truck rental has been confirmed.', 'success');
+        form.reset();
+                  sendConfirmationEmail(data);
+                }
+              }
+            }
+        } else {
+          throw new Error('Form submission failed');
+        }
+      } catch (error) {
+        showNotification('There was an error processing your request. Please try again.', 'error');
+      } finally {
+        document.getElementById("submitButton").disabled = false;
+        document.getElementById("submitButton").innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Submit Request';
+      }
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `notification p-4 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+      } text-white`;
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+          <p>${message}</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+      }, 5000);
+    }
+
+    function getTruckRate(truckType) {
+      const rates = {
+        'standard': 100,
+        'heavy-duty': 150,
+        'refrigerated': 200
+      };
+      return rates[truckType] || 100;
+    }
+
+    async function sendConfirmationEmail(data) {
+      const emailContent = `
+        Dear ${data.name},
+
+        Thank you for choosing TruckRentDrive! Your truck rental has been confirmed.
+
+        Details:
+        - Truck Type: ${data['truck-type']}
+        - Pickup Date: ${data.pickup_date}
+        - Return Date: ${data.return_date}
+        - Pickup Location: ${data.pickup}
+        - Drop-off Location: ${data.dropoff}
+
+        If you have any questions, please contact us at info@truckrentdrive.com.
+
+        Best regards,
+        TruckRentDrive Team
+      `;
+
+      try {
+        await fetch("https://formspree.io/f/mdkeqgwk", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: data.email,
+            subject: 'TruckRentDrive Rental Confirmation',
+            message: emailContent
+          })
+        });
+      } catch (error) {
+        console.error('Error sending confirmation email:', error);
+      }
+    }
+
+    function updateTotal() {
+      const truckType = document.getElementById('truck-type').value;
+      const pickupDate = document.getElementById('pickup_date').value;
+      const returnDate = document.getElementById('return_date').value;
+
+      if (truckType && pickupDate && returnDate) {
+        const start = new Date(pickupDate);
+        const end = new Date(returnDate);
+        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const rate = getTruckRate(truckType);
+        const total = rate * days;
+
+        document.getElementById('rental-total').textContent = `$${total}`;
+        document.getElementById('total-days').textContent = days;
+        document.getElementById('daily-rate').textContent = `$${rate}`;
+        document.getElementById('price-calculation').classList.remove('hidden');
+      }
+    }
+
+    function initMap() {
+      const map = L.map('map').setView([39.8283, -98.5795], 4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      
+      const trucks = [
+        { lat: 39.8283, lng: -98.5795, name: "Truck #1" },
+        { lat: 40.7128, lng: -74.0060, name: "Truck #2" },
+        { lat: 34.0522, lng: -118.2437, name: "Truck #3" }
+      ];
+
+      trucks.forEach(truck => {
+        const marker = L.marker([truck.lat, truck.lng]).addTo(map);
+        marker.bindPopup(`<b>${truck.name}</b><br>Status: Available`);
+      });
+    }
+
+    window.onload = function() {
+      initMap();
+      
+      document.getElementById('truck-type').addEventListener('change', updateTotal);
+      document.getElementById('pickup_date').addEventListener('change', updateTotal);
+      document.getElementById('return_date').addEventListener('change', updateTotal);
+
+      const elements = stripe.elements();
+      const card = elements.create('card');
+      card.mount('#card-element');
+
+      // Initialize truck tracker
+      window.addEventListener('load', () => {
+        window.truckTracker.init('map');
+
+        // Add filter functionality
+        document.getElementById('truckTypeFilter').addEventListener('change', (e) => {
+          const type = e.target.value;
+          window.truckTracker.filterByType(type);
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+          const status = e.target.value;
+          window.truckTracker.filterByStatus(status);
+        });
+      });
+    };
+
+    function toggleMobileMenu() {
+      const mobileNav = document.getElementById('mobileNav');
+      mobileNav.classList.toggle('active');
+    }
+
+    // Add event listener for window resize
+    window.addEventListener('resize', function() {
+      const mobileNav = document.getElementById('mobileNav');
+      if (window.innerWidth > 768 && mobileNav.classList.contains('active')) {
+        mobileNav.classList.remove('active');
+      }
+    });
+  </script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow-md p-4 fixed w-full z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <a href="index.html" class="flex items-center space-x-3">
+        <img src="images/logo/truckrentdrive-logo.svg" alt="TruckRentDrive Logo" class="logo-small">
+        <span class="text-2xl font-bold text-blue-600">TruckRentDrive</span>
+      </a>
+      <!-- Desktop Navigation -->
+      <nav class="space-x-6 desktop-menu">
+        <a href="index.html" class="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
+        <a href="#registration" class="text-gray-600 hover:text-blue-600 transition-colors">Register</a>
+        <a href="rent-a-truck.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Rent a Truck</a>
+      </nav>
+      <!-- Mobile Menu Button -->
+      <button class="mobile-menu p-2 focus:outline-none hidden md:hidden" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars text-2xl text-blue-600"></i>
+      </button>
+    </div>
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav transform" id="mobileNav">
+      <div class="flex justify-end mb-8">
+        <button onclick="toggleMobileMenu()" class="p-2">
+          <i class="fas fa-times text-2xl text-blue-600"></i>
+        </button>
+      </div>
+      <nav class="flex flex-col space-y-4">
+        <a href="index.html" class="text-gray-600 hover:text-blue-600 transition-colors text-lg">Home</a>
+        <a href="#registration" class="text-gray-600 hover:text-blue-600 transition-colors text-lg">Register</a>
+        <a href="rent-a-truck.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center text-lg">Rent a Truck</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="pt-20 text-center bg-hero bg-overlay text-white fade-in">
+    <div class="container px-4 py-16">
+      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">Rent a Truck</h2>
+      <p class="text-lg md:text-xl mb-8">Move goods across states with ease and reliability.</p>
+      <img src="images/truck-hero.jpg" alt="Truck on the road" class="mt-4 mx-auto rounded-xl shadow-2xl w-full max-w-4xl zoom">
+    </div>
+  </section>
+
+  <section class="py-16 bg-white">
+    <div class="container px-4">
+      <h3 class="text-2xl md:text-3xl font-semibold mb-12 text-center">Available Trucks</h3>
+      <div class="truck-grid">
+        <div class="truck-card bg-gray-50 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-all">
+          <img src="images/road_transport.jpg" class="w-full h-48 object-cover fade-in" alt="Standard Truck">
+          <div class="p-6">
+            <h4 class="text-xl font-semibold mb-3">Standard Truck</h4>
+            <p class="text-gray-600 mb-4">Perfect for local deliveries and small cargo</p>
+            <span class="text-green-600 flex items-center"><i class="fas fa-check-circle mr-2"></i> Available Now</span>
+          </div>
+        </div>
+        <div class="truck-card bg-gray-50 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-all">
+          <img src="images/truck-rental.jpg" class="w-full h-48 object-cover fade-in" alt="Heavy Duty Truck">
+          <div class="p-6">
+            <h4 class="text-xl font-semibold mb-3">Heavy Duty Truck</h4>
+            <p class="text-gray-600 mb-4">Ideal for long-haul transportation</p>
+            <span class="text-green-600 flex items-center"><i class="fas fa-check-circle mr-2"></i> Available Now</span>
+          </div>
+        </div>
+        <div class="truck-card bg-gray-50 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-all">
+          <img src="images/truck-fleet.jpg" class="w-full h-48 object-cover fade-in" alt="Refrigerated Truck">
+          <div class="p-6">
+            <h4 class="text-xl font-semibold mb-3">Refrigerated Truck</h4>
+            <p class="text-gray-600 mb-4">Temperature-controlled cargo transport</p>
+            <span class="text-yellow-600 flex items-center"><i class="fas fa-clock mr-2"></i> Available Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 bg-gray-50">
+    <div class="container px-4">
+      <h3 class="text-2xl md:text-3xl font-semibold mb-12 text-center">Live Truck Tracking</h3>
+      <div class="relative">
+        <div id="map" class="w-full h-[500px] rounded-xl shadow-lg"></div>
+        <div class="tracking-controls bg-white p-6 rounded-xl shadow-lg absolute top-4 right-4 md:w-72">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Type</label>
+              <select id="truckTypeFilter" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <option value="all">All Types</option>
+                <option value="Standard">Standard</option>
+                <option value="Heavy Duty">Heavy Duty</option>
+                <option value="Refrigerated">Refrigerated</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+              <select id="statusFilter" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <option value="all">All Status</option>
+                <option value="Available">Available</option>
+                <option value="In Transit">In Transit</option>
+                <option value="Loading">Loading</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="registration" class="py-16 bg-white">
+    <div class="container px-4">
+      <h3 class="text-2xl md:text-3xl font-semibold mb-12 text-center">Rental Registration Form</h3>
+      <form class="form-container bg-gray-50 p-8 rounded-xl shadow-lg space-y-6" onsubmit="handleSubmit(event)" data-netlify="true" name="rental-form">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 mb-2" for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="John Doe" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 mb-2" for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="john@example.com" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 mb-2" for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="(555) 123-4567" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 mb-2" for="truck-type">Truck Type</label>
+            <select id="truck-type" name="truck-type" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+              <option value="">Select a truck type</option>
+              <option value="standard">Standard Truck</option>
+              <option value="heavy-duty">Heavy Duty Truck</option>
+              <option value="refrigerated">Refrigerated Truck</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 mb-2" for="pickup">Pickup Location</label>
+            <input type="text" id="pickup" name="pickup" placeholder="Enter pickup location" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 mb-2" for="dropoff">Drop-off Location</label>
+            <input type="text" id="dropoff" name="dropoff" placeholder="Enter drop-off location" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 mb-2" for="pickup_date">Pickup Date</label>
+            <input type="date" id="pickup_date" name="pickup_date" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 mb-2" for="return_date">Return Date</label>
+            <input type="date" id="return_date" name="return_date" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500" required>
+          </div>
+        </div>
+        <div>
+          <label class="block text-gray-700 mb-2" for="message">Additional Information</label>
+          <textarea id="message" name="message" placeholder="Any special requirements or notes" class="w-full p-2 border border-blue-300 rounded focus:outline-none focus:border-blue-500 h-32"></textarea>
+        </div>
+
+        <div id="price-calculation" class="hidden bg-blue-50 p-4 rounded-lg mb-4">
+          <h4 class="font-semibold mb-2">Rental Summary</h4>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span>Daily Rate:</span>
+              <span id="daily-rate">$0</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Number of Days:</span>
+              <span id="total-days">0</span>
+            </div>
+            <div class="flex justify-between font-semibold">
+              <span>Total Amount:</span>
+              <span id="rental-total">$0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="font-semibold">Payment Method</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label class="payment-method p-4 rounded-lg bg-white shadow-sm">
+              <input type="radio" name="payment-method" value="card" class="hidden" checked>
+              <div class="flex items-center">
+                <i class="fas fa-credit-card text-blue-600 mr-2"></i>
+                <span>Credit Card</span>
+              </div>
+            </label>
+            <label class="payment-method p-4 rounded-lg bg-white shadow-sm">
+              <input type="radio" name="payment-method" value="paypal" class="hidden">
+              <div class="flex items-center">
+                <i class="fab fa-paypal text-blue-600 mr-2"></i>
+                <span>PayPal</span>
+              </div>
+            </label>
+            <label class="payment-method p-4 rounded-lg bg-white shadow-sm">
+              <input type="radio" name="payment-method" value="bank" class="hidden">
+              <div class="flex items-center">
+                <i class="fas fa-university text-blue-600 mr-2"></i>
+                <span>Bank Transfer</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="card-element" class="p-4 border border-blue-300 rounded">
+          <!-- Stripe Card Element will be inserted here -->
+        </div>
+        <div id="card-errors" class="text-red-600 text-sm" role="alert"></div>
+
+        <button id="submitButton" type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+          <i class="fas fa-paper-plane mr-2"></i> Submit Request
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <footer class="bg-white text-center p-8 border-t mt-8">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div>
+          <h4 class="font-semibold mb-4">Contact Us</h4>
+          <p class="text-gray-600">Email: info@truckrentdrive.com</p>
+          <p class="text-gray-600">Phone: (555) 123-4567</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Quick Links</h4>
+          <div class="space-y-2">
+            <a href="index.html" class="block text-gray-600 hover:text-blue-600">Home</a>
+            <a href="rent-a-truck.html" class="block text-gray-600 hover:text-blue-600">Rent a Truck</a>
+            <a href="#features" class="block text-gray-600 hover:text-blue-600">Features</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Follow Us</h4>
+          <div class="space-x-4">
+            <a href="#" class="text-gray-600 hover:text-blue-600"><i class="fab fa-facebook"></i></a>
+            <a href="#" class="text-gray-600 hover:text-blue-600"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="text-gray-600 hover:text-blue-600"><i class="fab fa-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+      <p class="text-gray-600">&copy; 2024 TruckRentDrive. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>
